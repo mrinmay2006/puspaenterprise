@@ -1,0 +1,378 @@
+/* ===========================
+   PUSPA ENTERPRISE FINAL CSS
+   PART 1
+=========================== */
+
+/* Reset */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f5f7fb;
+    color:#333;
+    line-height:1.7;
+}
+
+/* Navigation */
+
+nav{
+    position:sticky;
+    top:0;
+    z-index:999;
+    background:#0A66C2;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:30px;
+    padding:15px;
+    box-shadow:0 3px 10px rgba(0,0,0,.15);
+}
+
+nav a{
+    color:#fff;
+    text-decoration:none;
+    font-size:17px;
+    font-weight:bold;
+    transition:.3s;
+}
+
+nav a:hover{
+    color:#FFD54F;
+}
+
+/* Header */
+
+header{
+    background:linear-gradient(135deg,#0A66C2,#00A651);
+    color:#fff;
+    text-align:center;
+    padding:60px 20px;
+}
+
+.logo{
+    width:110px;
+    height:110px;
+    border-radius:50%;
+    background:#fff;
+    padding:8px;
+    box-shadow:0 8px 20px rgba(0,0,0,.25);
+    margin-bottom:20px;
+}
+
+header h1{
+    font-size:42px;
+    margin-bottom:10px;
+}
+
+header h2{
+    font-size:24px;
+    margin-bottom:12px;
+}
+
+header p{
+    font-size:18px;
+}
+
+/* Hero Buttons */
+
+.buttons{
+    margin-top:30px;
+}
+
+.buttons a{
+    display:inline-block;
+    margin:8px;
+    padding:14px 22px;
+    border-radius:10px;
+    text-decoration:none;
+    color:#fff;
+    font-weight:bold;
+    transition:.3s;
+}
+
+.call{
+    background:#1565C0;
+}
+
+.whatsapp{
+    background:#25D366;
+}
+
+.location{
+    background:#FB8C00;
+}
+
+.buttons a:hover{
+    transform:translateY(-4px);
+    box-shadow:0 6px 15px rgba(0,0,0,.25);
+}
+/* ===========================
+   PUSPA ENTERPRISE FINAL CSS
+   PART 2
+=========================== */
+
+/* Common Section */
+
+section{
+    width:90%;
+    max-width:1200px;
+    margin:50px auto;
+    background:#fff;
+    border-radius:20px;
+    padding:40px;
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+}
+
+section h2{
+    text-align:center;
+    color:#0A66C2;
+    margin-bottom:20px;
+    font-size:32px;
+}
+
+section p{
+    text-align:center;
+    font-size:17px;
+    line-height:1.8;
+}
+
+/* Services */
+
+.services{
+    background:transparent;
+    box-shadow:none;
+    padding:0;
+}
+
+.service-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:25px;
+    margin-top:30px;
+}
+
+.card{
+    background:#fff;
+    border-radius:18px;
+    padding:30px 20px;
+    text-align:center;
+    border-top:5px solid #0A66C2;
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+    transition:.3s;
+    cursor:pointer;
+}
+
+.card:hover{
+    transform:translateY(-8px);
+    background:#0A66C2;
+    color:#fff;
+}
+
+.card{
+    font-size:18px;
+    font-weight:bold;
+} 
+/* ===========================
+   PUSPA ENTERPRISE FINAL CSS
+   PART 3
+=========================== */
+
+/* About Section */
+
+.about{
+    text-align:center;
+}
+
+.about-box{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:25px;
+    margin-top:30px;
+}
+
+.about-box div{
+    background:#ffffff;
+    border-radius:15px;
+    padding:25px;
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+    transition:.3s;
+    border-top:5px solid #00A651;
+}
+
+.about-box div:hover{
+    transform:translateY(-8px);
+    background:#00A651;
+    color:#fff;
+}
+
+/* Contact Section */
+
+.contact{
+    text-align:center;
+}
+
+.contact-box{
+    max-width:800px;
+    margin:auto;
+}
+
+.contact-box p{
+    margin:12px 0;
+    font-size:17px;
+}
+
+.contact .call,
+.contact .whatsapp,
+.contact .location{
+    display:inline-block;
+    margin:10px;
+    padding:14px 24px;
+    border-radius:10px;
+    text-decoration:none;
+    color:#fff;
+    font-weight:bold;
+}
+
+.contact .call{
+    background:#1565C0;
+}
+
+.contact .whatsapp{
+    background:#25D366;
+}
+
+.contact .location{
+    background:#FB8C00;
+}
+
+/* Footer */
+
+.footer{
+    background:#0A66C2;
+    color:#fff;
+    text-align:center;
+    padding:40px 20px;
+    margin-top:50px;
+}
+
+.footer h3{
+    margin-bottom:15px;
+}
+
+.footer p{
+    margin:8px 0;
+} 
+/* ===========================
+   PUSPA ENTERPRISE FINAL CSS
+   PART 4
+=========================== */
+
+/* Mobile Responsive */
+
+@media (max-width:768px){
+
+nav{
+    flex-wrap:wrap;
+    gap:15px;
+}
+
+header{
+    padding:40px 15px;
+}
+
+header h1{
+    font-size:30px;
+}
+
+header h2{
+    font-size:20px;
+}
+
+.logo{
+    width:80px;
+    height:80px;
+}
+
+.buttons a{
+    display:block;
+    width:220px;
+    margin:10px auto;
+}
+
+section{
+    width:95%;
+    padding:25px;
+}
+
+.service-grid{
+    grid-template-columns:1fr;
+}
+
+.about-box{
+    grid-template-columns:1fr;
+}
+
+}
+
+/* Smooth Hover */
+
+.card,
+.about-box div,
+.buttons a{
+    transition:all .3s ease;
+}
+
+/* Scroll Bar */
+
+::-webkit-scrollbar{
+    width:8px;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#0A66C2;
+    border-radius:10px;
+}
+
+/* Selection */
+
+::selection{
+    background:#0A66C2;
+    color:white;
+} 
+.contact iframe{
+    margin-top:25px;
+    box-shadow:0 8px 20px rgba(0,0,0,.15);
+} 
+/* Floating WhatsApp */
+
+.floating-whatsapp{
+    position:fixed;
+    right:20px;
+    bottom:20px;
+    width:60px;
+    height:60px;
+    background:#25D366;
+    color:#fff;
+    text-decoration:none;
+    border-radius:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:30px;
+    box-shadow:0 8px 20px rgba(0,0,0,.3);
+    z-index:9999;
+    transition:.3s;
+}
+
+.floating-whatsapp:hover{
+    transform:scale(1.1);
+}
