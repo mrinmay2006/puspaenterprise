@@ -218,3 +218,111 @@ document.querySelectorAll('.reveal').forEach(x=>io.observe(x));
 const sticky=document.getElementById('stickyContact');
 addEventListener('scroll',()=>sticky.classList.toggle('show',scrollY>650));
 </script><div class="modal" id="modal"><div class="modalbox"><button class="close" onclick="closeModal()">✕</button><div class="eyebrow">Puspa Enterprise</div><h3 id="modalTitle">Service</h3><p id="modalText"></p><a class="btn green" href="https://wa.me/919883823498?text=হ্যালো%20Puspa%20Enterprise,%20আমি%20এই%20পরিষেবা%20সম্পর্কে%20জানতে%20চাই।" target="_blank">💬 WhatsApp-এ জিজ্ঞাসা করুন</a></div></div><div class="sticky-contact" id="stickyContact"><a class="scall" href="tel:9883823498">☎ Call Now</a><a class="swa" href="https://wa.me/919883823498?text=হ্যালো%20Puspa%20Enterprise" target="_blank">💬 WhatsApp</a></div></body></html>
+<div class="modal" id="modal">
+  <div class="modalbox">
+    <button class="close" onclick="closeModal()">✕</button>
+    <div class="eyebrow">Puspa Enterprise</div>
+    <h3 id="modalTitle">Service Details</h3>
+    <p id="modalText"></p>
+  </div>
+</div>
+
+<script>
+function menu(){
+  const n=document.querySelector('nav');
+  n.classList.toggle('mobile-open');
+}
+
+function openService(b){
+  const card=b.closest('.service');
+  const d=card.querySelector('.svc-details');
+
+  d.classList.toggle('show');
+  b.querySelector('span').textContent =
+    d.classList.contains('show') ? '↑' : '→';
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+}
+
+const input=document.getElementById('search');
+const all=[...document.querySelectorAll('.service')];
+const result=document.getElementById('result');
+const empty=document.getElementById('empty');
+
+let active='all';
+
+function cat(t){
+  t=t.toLowerCase();
+
+  if(t.includes('pan') || t.includes('itr') || t.includes('tax'))
+    return 'tax';
+
+  if(
+    t.includes('aadhaar') ||
+    t.includes('voter') ||
+    t.includes('government') ||
+    t.includes('certificate') ||
+    t.includes('form')
+  )
+    return 'gov';
+
+  return 'digital';
+}
+
+all.forEach(c=>{
+  c.dataset.category=cat(c.innerText);
+});
+
+function filter(){
+  const q=input.value.toLowerCase().trim();
+  let n=0;
+
+  all.forEach(c=>{
+    const ok=
+      (!q || c.dataset.search.toLowerCase().includes(q)) &&
+      (active==='all' || c.dataset.category===active);
+
+    c.style.display=ok ? 'block' : 'none';
+
+    if(ok) n++;
+  });
+
+  result.textContent=n+'টি পরিষেবা';
+  empty.style.display=n ? 'none' : 'block';
+}
+
+input.addEventListener('input',filter);
+
+document.querySelectorAll('.filterbtn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.filterbtn')
+      .forEach(x=>x.classList.remove('active'));
+
+    b.classList.add('active');
+    active=b.dataset.filter;
+    filter();
+  };
+});
+
+filter();
+
+const topBtn=document.getElementById('top');
+
+window.addEventListener('scroll',()=>{
+  topBtn.classList.toggle('show',window.scrollY>500);
+});
+
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting)
+      e.target.classList.add('visible');
+  });
+},{threshold:.12});
+
+document.querySelectorAll('.reveal').forEach(x=>io.observe(x));
+</script>
+
+</body>
+</html>
