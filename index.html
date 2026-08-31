@@ -101,10 +101,10 @@ footer{background:#050e22;color:#aab8cd;padding:43px 0 22px}.footgrid{display:gr
             <div class="form-group">
                 <label>কার্ডের ধরন নির্বাচন করুন:</label>
                 <select id="cardType" class="form-control">
-                    <option value="Aadhaar PVC Card" data-price="50">Aadhaar PVC Card (₹50)</option>
-                    <option value="Voter PVC Card" data-price="50">Voter PVC Card (₹50)</option>
-                    <option value="PAN PVC Card" data-price="50">PAN PVC Card (₹50)</option>
-                    <option value="Custom ID Card" data-price="70">Custom ID / Smart Card (₹70)</option>
+                    <option value="Aadhaar PVC Card" data-price="50">Aadhaar PVC Card (₹80)</option>
+                    <option value="Voter PVC Card" data-price="50">Voter PVC Card (₹80)</option>
+                    <option value="PAN PVC Card" data-price="50">PAN PVC Card (₹80)</option>
+                    <option value="Custom ID Card" data-price="70">Custom ID / Smart Card (₹100)</option>
                 </select>
             </div>
 
@@ -158,4 +158,125 @@ footer{background:#050e22;color:#aab8cd;padding:43px 0 22px}.footgrid{display:gr
             <span id="resAmount" style="color:#d93025;">₹50</span>
         </div>
 
-        <button class=
+        <button class="btn green" style="width:100%;justify-content:center;" onclick="makePayment()">
+            Pay via UPI / QR Code / Card
+        </button>
+    </div>
+</div>
+
+<a class="wa-float" href="https://wa.me/919883823498" target="_blank"><svg viewBox="0 0 32 32"><path d="M19.11 17.08c-.27-.14-1.61-.79-1.86-.88-.25-.09-.43-.14-.61.14-.18.27-.7.88-.86 1.06-.16.18-.32.2-.59.07-.27-.14-1.14-.42-2.17-1.34-.8-.71-1.34-1.59-1.5-1.86-.16-.27-.02-.42.12-.55.12-.12.27-.32.41-.48.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.48-.07-.14-.61-1.47-.84-2.01-.22-.52-.45-.45-.61-.46h-.52c-.18 0-.48.07-.73.34-.25.27-.95.93-.95 2.27s.98 2.64 1.11 2.82c.14.18 1.93 2.95 4.68 4.14.65.28 1.16.45 1.56.58.66.21 1.26.18 1.73.11.53-.08 1.61-.66 1.84-1.29.23-.64.23-1.18.16-1.29-.07-.11-.25-.18-.52-.32z"/><path d="M16.01 3C8.84 3 3 8.84 3 16.01c0 2.29.6 4.44 1.66 6.3L3 29l6.86-1.61a12.95 12.95 0 0 0 6.15 1.56h.01C23.16 28.95 29 23.12 29 15.99 29 8.84 23.16 3 16.01 3zm0 23.8h-.01c-1.92 0-3.8-.52-5.45-1.5l-.39-.23-4.07.95.97-3.97-.25-.41a10.99 10.99 0 0 1-1.69-5.84C5.12 9.76 10.02 4.87 16.01 4.87c5.99 0 10.87 4.88 10.87 10.88 0 5.99-4.88 10.87-10.87 10.87z"/></svg></a>
+
+<script>
+// Mobile Menu
+function menu(){const n=document.querySelector('nav');n.style.display=n.style.display==='flex'?'':'flex';}
+
+// Card Details Toggle
+function toggleDetails(btn){
+    const d = btn.closest('.service').querySelector('.svc-details');
+    if(d){
+        d.classList.toggle('show');
+        btn.querySelector('span').textContent = d.classList.contains('show') ? '↑' : '→';
+    }
+}
+
+// Order Modal Handlers
+let generatedOrderId = '';
+let currentPrice = 50;
+
+function openOrderModal(type){
+    document.getElementById('orderModal').classList.add('open');
+    updateTotal();
+}
+function closeOrderModal(){ document.getElementById('orderModal').classList.remove('open'); }
+function closePaymentModal(){ document.getElementById('paymentModal').classList.remove('open'); }
+
+const cardTypeSelect = document.getElementById('cardType');
+const cardQtyInput = document.getElementById('cardQty');
+const displayTotal = document.getElementById('displayTotal');
+
+function updateTotal(){
+    const unitPrice = parseInt(cardTypeSelect.options[cardTypeSelect.selectedIndex].dataset.price);
+    const qty = parseInt(cardQtyInput.value) || 1;
+    currentPrice = unitPrice * qty;
+    displayTotal.textContent = '₹' + currentPrice;
+}
+
+cardTypeSelect.addEventListener('change', updateTotal);
+cardQtyInput.addEventListener('input', updateTotal);
+
+// Form Submit & Cloudflare API Call
+document.getElementById('pvcOrderForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    generatedOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+    
+    // Cloudflare Pages Functions / API তে ডেটা পাঠানো (functions/api/orders.js)
+    const payload = {
+        orderId: generatedOrderId,
+        cardType: cardTypeSelect.value,
+        qty: cardQtyInput.value,
+        name: document.getElementById('custName').value,
+        phone: document.getElementById('custPhone').value,
+        address: document.getElementById('custAddress').value,
+        total: currentPrice
+    };
+
+    try {
+        await fetch('/api/orders', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+    } catch(err) {
+        console.warn('Local/offline demo mode');
+    }
+
+    closeOrderModal();
+    document.getElementById('resOrderId').textContent = generatedOrderId;
+    document.getElementById('resAmount').textContent = '₹' + currentPrice;
+    document.getElementById('paymentModal').classList.add('open');
+});
+
+function makePayment(){
+    const phone = document.getElementById('custPhone').value;
+    const name = document.getElementById('custName').value;
+    // WhatsApp বা UPI রিডাইরেক্ট (Razorpay স্ক্রিপ্ট থাকলে সরাসরি গেটওয়ে ট্রিগার হবে)
+    const waText = encodeURIComponent(`নতুন অর্ডার সাবমিট হয়েছে!\nঅর্ডার আইডি: ${generatedOrderId}\nনাম: ${name}\nমূল্য: ₹${currentPrice}`);
+    window.open(`https://wa.me/919883823498?text=${waText}`, '_blank');
+}
+
+// Search & Filter
+const input = document.getElementById('search');
+const services = document.querySelectorAll('.service');
+const result = document.getElementById('result');
+const empty = document.getElementById('empty');
+let activeFilter = 'all';
+
+function filterServices(){
+    const q = input.value.toLowerCase().trim();
+    let count = 0;
+    services.forEach(s => {
+        const matchSearch = !q || s.dataset.search.includes(q);
+        const matchCat = activeFilter === 'all' || s.dataset.category === activeFilter;
+        if(matchSearch && matchCat){
+            s.style.display = 'block';
+            count++;
+        } else {
+            s.style.display = 'none';
+        }
+    });
+    result.textContent = `${count}টি পরিষেবা`;
+    empty.style.display = count ? 'none' : 'block';
+}
+
+input.addEventListener('input', filterServices);
+document.querySelectorAll('.filterbtn').forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll('.filterbtn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        filterServices();
+    };
+});
+</script>
+</body>
+</html>
