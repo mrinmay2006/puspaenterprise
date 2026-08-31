@@ -326,3 +326,118 @@ document.querySelectorAll('.reveal').forEach(x=>io.observe(x));
 
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVC Card Printing Service - Puspa Enterprise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div class="max-w-2xl mx-auto my-10 p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+        <h2 class="text-2xl font-bold text-center text-blue-600 mb-2">PVC Card Printing Order</h2>
+        <p class="text-sm text-center text-gray-500 mb-6">আপনার কার্ডের ফাইল আপলোড করুন এবং সহজেই অর্ডার সম্পন্ন করুন।</p>
+
+        <form id="pvcOrderForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold mb-1">কার্ডের ধরন নির্বাচন করুন:</label>
+                <select id="cardType" class="w-full border p-2.5 rounded-lg focus:outline-blue-500">
+                    <option value="Aadhaar Card" data-price="50">Aadhaar Card (₹50)</option>
+                    <option value="Voter Card" data-price="50">Voter Card (₹50)</option>
+                    <option value="PAN Card" data-price="50">PAN Card (₹50)</option>
+                    <option value="Custom ID / Other" data-price="70">Custom ID / Smart Card (₹70)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1">পরিমাণ (Quantity):</label>
+                <input type="number" id="cardQty" value="1" min="1" max="50" class="w-full border p-2.5 rounded-lg focus:outline-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1">কার্ডের PDF / ছবি আপলোড করুন:</label>
+                <input type="file" id="cardFile" accept=".pdf, image/*" required class="w-full border border-dashed border-gray-300 p-2.5 rounded-lg cursor-pointer bg-gray-50">
+            </div>
+
+            <hr class="my-4">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">পুরো নাম:</label>
+                    <input type="text" id="custName" required placeholder="আপনার নাম" class="w-full border p-2.5 rounded-lg focus:outline-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">মোবাইল নম্বর (WhatsApp):</label>
+                    <input type="tel" id="custPhone" required placeholder="10-digit Mobile Number" class="w-full border p-2.5 rounded-lg focus:outline-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1">ডেলিভারি ঠিকানা ও পিনকোড:</label>
+                <textarea id="custAddress" rows="3" required placeholder="গ্রাম/শহর, পোস্ট, জেলা, পিনকোড" class="w-full border p-2.5 rounded-lg focus:outline-blue-500"></textarea>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-lg flex justify-between items-center text-lg font-bold text-blue-900">
+                <span>মোট প্রদেয় মূল্য:</span>
+                <span id="totalAmount">₹50</span>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow transition">
+                অর্ডার নিশ্চিত করুন ও পেমেন্ট করুন
+            </button>
+        </form>
+
+        <div id="paymentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div class="bg-white p-6 rounded-xl max-w-md w-full text-center space-y-4">
+                <div class="text-green-500 text-4xl">✓</div>
+                <h3 class="text-xl font-bold">অর্ডার তৈরি হয়েছে!</h3>
+                <p class="text-sm text-gray-600">আপনার অর্ডার আইডি: <span id="displayOrderId" class="font-mono font-bold text-blue-600"></span></p>
+                <p class="text-lg font-semibold">পেমেন্ট করার পরিমাণ: <span id="displayAmount" class="text-red-500 font-bold"></span></p>
+
+                <button onclick="proceedToGateway()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-lg">
+                    Pay via UPI / QR Code / Card
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cardType = document.getElementById('cardType');
+        const cardQty = document.getElementById('cardQty');
+        const totalAmountDisplay = document.getElementById('totalAmount');
+        let currentOrderId = '';
+        let currentFinalPrice = 50;
+
+        // প্রাইস ক্যালকুলেট করার ফাংশন
+        function calculateTotal() {
+            const pricePerUnit = parseInt(cardType.options[cardType.selectedIndex].dataset.price);
+            const qty = parseInt(cardQty.value) || 1;
+            currentFinalPrice = pricePerUnit * qty;
+            totalAmountDisplay.innerText = `₹${currentFinalPrice}`;
+        }
+
+        cardType.addEventListener('change', calculateTotal);
+        cardQty.addEventListener('input', calculateTotal);
+
+        // ফর্ম সাবমিট হ্যান্ডলার
+        document.getElementById('pvcOrderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // ইউনিক অর্ডার আইডি তৈরি (যেমন: ORD-2026-XXXX)
+            currentOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+
+            // পেমেন্ট পপআপ দেখানো
+            document.getElementById('displayOrderId').innerText = currentOrderId;
+            document.getElementById('displayAmount').innerText = `₹${currentFinalPrice}`;
+            document.getElementById('paymentModal').classList.remove('hidden');
+        });
+
+        function proceedToGateway() {
+            // এখানে Razorpay / Cashfree ইন্টিগ্রেশন বা UPI পেমেন্ট লিঙ্ক বসবে
+            alert(`Order ID: ${currentOrderId} এর জন্য পেমেন্ট গেটওয়ে লোড হচ্ছে...`);
+        }
+    </script>
+</body>
+</html>
