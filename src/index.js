@@ -2,30 +2,43 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // API: create PVC order
+    if (url.pathname === "/api/health" && request.method === "GET") {
+      try {
+        await env.DB.prepare("SELECT 1").first();
+        return json({ ok: true, database: "connected" });
+      } catch (e) {
+        return json({ ok: false, error: e.message }, 500);
+      }
+    }
+
     if (url.pathname === "/api/orders" && request.method === "POST") {
       try {
-        const body = await request.json();
+        const b = await request.json();
 
-        const quantity = Math.max(1, Number(body.quantity || 1));
+        const service = String(b.service || "").trim();
+        const name = String(b.name || "").trim();
+        const phone = String(b.phone || "").trim();
+        const email = String(b.email || "").trim();
+        const address = String(b.address || "").trim();
+        const notes = String(b.notes || "").trim();
 
-        const rate =
-          quantity >= 11 ? 50 :
-          quantity >= 6 ? 60 :
-          quantity >= 3 ? 70 : 80;
+        if (!service || !name || !phone) {
+          return json({ ok: false, error: "Name, phone and service are required" }, 400);
+        }
 
-        const delivery = quantity >= 3 ? 0 : 40;
-        const amount = quantity * rate + delivery;
-
-        const orderId =
-          "PE" +
-          new Date().toISOString().slice(0, 10).replaceAll("-", "") +
+        const orderNo =
+          "PE-" +
+          Date.now().toString(36).toUpperCase() +
           "-" +
-          Math.floor(Math.random() * 90000 + 10000);
+          Math.floor(100 + Math.random() * 900);
 
+        /*
+          Your existing D1 orders table has some old required columns:
+          card_type, quantity, rate, delivery_charge, pin.
+          We fill those with safe defaults so the old schema also works.
+        */
         await env.DB.prepare(`
           INSERT INTO orders (
-            id,
             card_type,
             quantity,
             rate,
@@ -37,67 +50,123 @@ export default {
             pin,
             payment_status,
             order_status,
-            created_at
+            tracking_number,
+            created_at,
+            order_no,
+            service,
+            email,
+            notes
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
-          orderId,
-          body.card_type || "PVC Card",
-          quantity,
-          rate,
-          delivery,
-          amount,
-          body.customer_name || "",
-          body.mobile || "",
-          body.address || "",
-          body.pin || "",
+          service,
+          1,
+          0,
+          0,
+          0,
+          name,
+          phone,
+          address,
+          "",
           "PENDING",
           "ORDER_RECEIVED",
+          null,
+          new Date().toISOString(),
+          orderNo,
+          service,
+          email,
+          notes
+        ).run();
+
+        return json({
+          ok: true,
+          order_no: orderNo,
+          message: "Request received successfully"
+        });
+      } catch (e) {
+        return json({
+          ok: false,
+          error: e.message || "Database error"
+        }, 500);
+      }
+    }
+
+    if (url.pathname === "/api/contact" && request.method === "POST") {
+      try {
+        const b = await request.json();
+
+        const name = String(b.name || "").trim();
+        const phone = String(b.phone || "").trim();
+        const email = String(b.email || "").trim();
+        const message = String(b.message || "").trim();
+
+        if (!name || !phone || !message) {
+          return json({ ok: false, error: "Required fields missing" }, 400);
+        }
+
+        await env.DB.prepare(`
+          INSERT INTO contacts (name, phone, email, message, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).bind(
+          name,
+          phone,
+          email,
+          message,
           new Date().toISOString()
         ).run();
 
-        return Response.json({
-          success: true,
-          order_id: orderId,
-          amount,
-          currency: "INR",
-          payment_status: "PENDING",
-          order_status: "ORDER_RECEIVED"
-        });
-      } catch (error) {
-        return Response.json(
-          {
-            success: false,
-            error: error.message
-          },
-          { status: 500 }
-        );
+        return json({ ok: true, message: "Message received successfully" });
+      } catch (e) {
+        return json({ ok: false, error: e.message || "Database error" }, 500);
       }
     }
 
-    // API: track order
-    if (url.pathname.startsWith("/api/orders/") && request.method === "GET") {
-      const orderId = url.pathname.split("/").pop();
-
-      const result = await env.DB
-        .prepare("SELECT * FROM orders WHERE id = ?")
-        .bind(orderId)
-        .first();
-
-      if (!result) {
-        return Response.json(
-          { success: false, error: "Order not found" },
-          { status: 404 }
-        );
+    if (url.pathname === "/api/orders" && request.method === "GET") {
+      if (!authorized(request, env)) {
+        return json({ ok: false, error: "Unauthorized" }, 401);
       }
 
-      return Response.json({
-        success: true,
-        order: result
-      });
+      const r = await env.DB.prepare(
+        "SELECT * FROM orders ORDER BY id DESC LIMIT 200"
+      ).all();
+
+      return json({ ok: true, orders: r.results || [] });
     }
 
-    // Website files
-    return env.ASSETS.fetch(request);
+    if (url.pathname === "/api/contact" && request.method === "GET") {
+      if (!authorized(request, env)) {
+        return json({ ok: false, error: "Unauthorized" }, 401);
+      }
+
+      const r = await env.DB.prepare(
+        "SELECT * FROM contacts ORDER BY id DESC LIMIT 200"
+      ).all();
+
+      return json({ ok: true, contacts: r.results || [] });
+    }
+
+    if (env.ASSETS) {
+      return env.ASSETS.fetch(request);
+    }
+
+    return new Response("Puspa Enterprise Worker is running.", {
+      status: 500
+    });
   }
 };
+
+function authorized(request, env) {
+  const token = env.ADMIN_TOKEN;
+  return !!token &&
+    request.headers.get("Authorization") === `Bearer ${token}`;
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "content-type": "application/json;charset=UTF-8",
+      "cache-control": "no-store"
+    }
+  });
+}
