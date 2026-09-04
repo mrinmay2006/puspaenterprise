@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Puspa Enterprise — Admin Panel</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Bengali",sans-serif;background:#f4f7fb;color:#172033}
+header{background:linear-gradient(135deg,#111827,#2563eb);color:#fff;padding:22px 24px;display:flex;justify-content:space-between;align-items:center;gap:15px;position:sticky;top:0;z-index:10}
+h1{margin:0;font-size:23px}.sub{opacity:.82;font-size:13px;margin-top:4px}
+button{border:0;border-radius:10px;padding:10px 15px;font-weight:700;cursor:pointer}.logout{background:#fff;color:#1d4ed8}
+main{max-width:1400px;margin:22px auto;padding:0 16px}.login,.panel{background:#fff;border-radius:18px;box-shadow:0 8px 30px #17203312;padding:22px}
+.login{max-width:460px;margin:60px auto}.login h2{margin-top:0}
+input,select{width:100%;padding:12px;border:1px solid #d8dee9;border-radius:10px;font-size:15px;margin:7px 0 12px}
+.primary{background:#2563eb;color:#fff}.danger{background:#dc2626;color:#fff}.muted{color:#64748b;font-size:13px}
+.toolbar{display:grid;grid-template-columns:1fr 180px 120px;gap:10px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{padding:16px;border-radius:14px;background:#eef4ff}.stat b{font-size:25px;display:block;margin-top:5px}
+.tablewrap{overflow:auto;border:1px solid #e5e7eb;border-radius:12px}table{width:100%;border-collapse:collapse;min-width:1000px}th,td{padding:12px;border-bottom:1px solid #edf0f4;text-align:left;font-size:14px;vertical-align:top}th{background:#f8fafc;position:sticky;top:0}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#e8eefc;font-size:12px;font-weight:700}.empty{text-align:center;padding:35px;color:#64748b}
+#app{display:none}.err{color:#b91c1c;margin:8px 0}.ok{color:#15803d;margin:8px 0}
+@media(max-width:700px){header{align-items:flex-start}.stats{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr}.login{margin:25px auto}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>⚙️ Puspa Enterprise — Admin Panel</h1><div class="sub">Customer Requests & Orders</div></div>
+  <button class="logout" id="logout" style="display:none">Logout</button>
+</header>
+
+<section id="loginBox" class="login">
+  <h2>Admin Login</h2>
+  <div class="muted">Cloudflare-এর ADMIN_TOKEN এখানে দিন। এটি ব্রাউজারে স্থায়ীভাবে সংরক্ষণ করা হবে না।</div>
+  <input id="token" type="password" placeholder="ADMIN_TOKEN">
+  <button class="primary" id="login" style="width:100%">Login</button>
+  <div id="loginMsg"></div>
+</section>
+
+<main id="app">
+  <div class="stats">
+    <div class="stat">মোট Request <b id="total">0</b></div>
+    <div class="stat">Received <b id="received">0</b></div>
+    <div class="stat">Processing <b id="processing">0</b></div>
+    <div class="stat">Completed <b id="completed">0</b></div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <input id="search" placeholder="নাম / মোবাইল / সার্ভিস / Order No খুঁজুন...">
+      <select id="status"><option value="">সব Status</option><option>ORDER_RECEIVED</option><option>PROCESSING</option><option>COMPLETED</option><option>CANCELLED</option></select>
+      <button class="primary" id="refresh">↻ Refresh</button>
+    </div>
+    <div id="msg"></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Order No</th><th>Customer</th><th>Mobile</th><th>Service</th><th>Address</th><th>Notes</th><th>Date</th><th>Status</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+let TOKEN="";
+let DATA=[];
+
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function showMsg(text,ok=false){$("msg").innerHTML='<div class="'+(ok?"ok":"err")+'">'+esc(text)+'</div>'}
+
+async function load(){
+  showMsg("Loading...",true);
+  try{
+    const r=await fetch("/api/orders",{headers:{Authorization:"Bearer "+TOKEN}});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||"Unauthorized");
+    DATA=d.orders||[];
+    render();
+    showMsg("Data loaded successfully.",true);
+  }catch(e){showMsg(e.message||"Failed to load orders")}
+}
+function render(){
+  const q=$("search").value.toLowerCase().trim(), st=$("status").value;
+  const list=DATA.filter(o=>{
+    const hay=[o.order_no,o.customer_name,o.mobile,o.service,o.address,o.notes].join(" ").toLowerCase();
+    return (!q||hay.includes(q))&&(!st||String(o.order_status||"")===st);
+  });
+  $("total").textContent=DATA.length;
+  $("received").textContent=DATA.filter(o=>o.order_status==="ORDER_RECEIVED").length;
+  $("processing").textContent=DATA.filter(o=>o.order_status==="PROCESSING").length;
+  $("completed").textContent=DATA.filter(o=>o.order_status==="COMPLETED").length;
+  $("rows").innerHTML=list.length?list.map(o=>`
+    <tr>
+      <td><b>${esc(o.order_no||"-")}</b></td>
+      <td>${esc(o.customer_name||"-")}</td>
+      <td>${esc(o.mobile||"-")}</td>
+      <td><span class="badge">${esc(o.service||o.card_type||"-")}</span></td>
+      <td>${esc(o.address||"-")}</td>
+      <td>${esc(o.notes||"-")}</td>
+      <td>${o.created_at?esc(new Date(o.created_at).toLocaleString("en-IN")):"-"}</td>
+      <td><span class="badge">${esc(o.order_status||"-")}</span></td>
+    </tr>`).join(""):'<tr><td colspan="8" class="empty">কোনো Request পাওয়া যায়নি</td></tr>';
+}
+$("login").onclick=async()=>{
+  TOKEN=$("token").value.trim();
+  if(!TOKEN){$("loginMsg").innerHTML='<div class="err">Token দিন</div>';return}
+  try{
+    const r=await fetch("/api/orders",{headers:{Authorization:"Bearer "+TOKEN}});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||"Login failed");
+    $("loginBox").style.display="none";$("app").style.display="block";$("logout").style.display="block";
+    DATA=d.orders||[];render();
+  }catch(e){$("loginMsg").innerHTML='<div class="err">'+esc(e.message)+'</div>'}
+};
+$("refresh").onclick=load;
+$("search").oninput=render;$("status").onchange=render;
+$("logout").onclick=()=>{TOKEN="";DATA=[];$("app").style.display="none";$("loginBox").style.display="block";$("logout").style.display="none";$("token").value=""};
+$("token").addEventListener("keydown",e=>{if(e.key==="Enter")$("login").click()});
+</script>
+</body>
+</html>
