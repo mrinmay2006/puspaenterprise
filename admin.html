@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Puspa Enterprise — Professional Admin</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Bengali",sans-serif;background:#f3f6fb;color:#172033}
+header{background:linear-gradient(135deg,#0f172a,#1d4ed8);color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;z-index:20;box-shadow:0 5px 20px #0002}
+h1{margin:0;font-size:22px}.sub{font-size:13px;opacity:.8;margin-top:4px}
+button{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer}.logout{background:#fff;color:#1d4ed8}
+main{max-width:1500px;margin:22px auto;padding:0 16px}.login{max-width:450px;margin:70px auto;background:#fff;padding:25px;border-radius:18px;box-shadow:0 10px 35px #17203318}.login h2{margin-top:0}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid #d7deea;border-radius:9px;font-size:14px;background:#fff}textarea{min-height:90px;resize:vertical}
+.primary{background:#2563eb;color:#fff}.danger{background:#dc2626;color:#fff}.success{background:#16a34a;color:#fff}.dark{background:#111827;color:#fff}.muted{color:#64748b;font-size:13px}.msg{margin:10px 0;font-size:13px}.err{color:#b91c1c}.ok{color:#15803d}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}.stat{background:#fff;padding:16px;border-radius:14px;box-shadow:0 6px 22px #17203310}.stat span{color:#64748b;font-size:13px}.stat b{display:block;font-size:25px;margin-top:5px}
+.panel{background:#fff;border-radius:16px;padding:16px;box-shadow:0 6px 25px #17203310}.toolbar{display:grid;grid-template-columns:1fr 180px 150px 110px;gap:9px;margin-bottom:13px}
+.tablewrap{overflow:auto;border:1px solid #e5e9f0;border-radius:12px}table{width:100%;border-collapse:collapse;min-width:1150px}th,td{padding:11px;border-bottom:1px solid #edf0f4;text-align:left;font-size:13px;vertical-align:top}th{background:#f8fafc;color:#475569}
+.status{border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800;border:1px solid #dbe2ec;background:#f8fafc}.status.PROCESSING{background:#fff7ed;color:#c2410c}.status.COMPLETED{background:#f0fdf4;color:#15803d}.status.CANCELLED{background:#fef2f2;color:#b91c1c}.status.ORDER_RECEIVED{background:#eff6ff;color:#1d4ed8}
+.actions{display:flex;gap:6px;flex-wrap:wrap}.mini{padding:7px 9px;font-size:11px}
+a.wa{display:inline-block;background:#16a34a;color:#fff;text-decoration:none;padding:7px 9px;border-radius:8px;font-size:11px;font-weight:700}
+.empty{text-align:center;padding:35px;color:#64748b}
+.modal{display:none;position:fixed;inset:0;background:#0008;z-index:50;padding:25px;overflow:auto}.box{max-width:720px;margin:30px auto;background:#fff;border-radius:18px;padding:22px}.boxhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.close{background:#e5e7eb}.details{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.detail{background:#f8fafc;padding:12px;border-radius:10px}.detail small{display:block;color:#64748b;margin-bottom:4px}.detail.full{grid-column:1/-1}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){header{align-items:flex-start}.stats{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr}.details{grid-template-columns:1fr}.detail.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header>
+<div><h1>⚙️ Puspa Enterprise — Admin Dashboard</h1><div class="sub">Requests • Orders • Customer Management</div></div>
+<button class="logout" id="logout" style="display:none">Logout</button>
+</header>
+
+<section id="loginBox" class="login">
+<h2>Admin Login</h2>
+<div class="muted">Cloudflare-এর ADMIN_TOKEN দিন। Token browser-এ permanent save করা হবে না।</div>
+<input id="token" type="password" placeholder="ADMIN_TOKEN" autocomplete="off">
+<button class="primary" id="login" style="width:100%;margin-top:6px">Login</button>
+<div id="loginMsg" class="msg"></div>
+</section>
+
+<main id="app" style="display:none">
+<div class="stats">
+<div class="stat"><span>মোট Request</span><b id="total">0</b></div>
+<div class="stat"><span>New / Received</span><b id="received">0</b></div>
+<div class="stat"><span>Processing</span><b id="processing">0</b></div>
+<div class="stat"><span>Completed</span><b id="completed">0</b></div>
+<div class="stat"><span>Cancelled</span><b id="cancelled">0</b></div>
+</div>
+<div class="panel">
+<div class="toolbar">
+<input id="search" placeholder="নাম / মোবাইল / সার্ভিস / Order No...">
+<select id="filter"><option value="">সব Status</option><option value="ORDER_RECEIVED">ORDER_RECEIVED</option><option value="PROCESSING">PROCESSING</option><option value="COMPLETED">COMPLETED</option><option value="CANCELLED">CANCELLED</option></select>
+<select id="serviceFilter"><option value="">সব Service</option></select>
+<button class="primary" id="refresh">↻ Refresh</button>
+</div>
+<div id="msg" class="msg"></div>
+<div class="tablewrap">
+<table><thead><tr><th>Order</th><th>Customer</th><th>Mobile</th><th>Service</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table>
+</div>
+</div>
+</main>
+
+<div class="modal" id="modal">
+<div class="box">
+<div class="boxhead"><h2 style="margin:0">Order Details</h2><button class="close" onclick="closeModal()">✕</button></div>
+<div id="detailContent"></div>
+</div>
+</div>
+
+<script>
+let TOKEN="", DATA=[];
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function msg(t,ok=false){$("msg").innerHTML='<span class="'+(ok?"ok":"err")+'">'+esc(t)+'</span>'}
+function wa(phone){let p=String(phone||"").replace(/\D/g,"");if(p.length===10)p="91"+p;return p}
+function fmt(d){try{return d?new Date(d).toLocaleString("en-IN"):"-"}catch{return "-"}}
+function render(){
+ const q=$("search").value.toLowerCase().trim(), st=$("filter").value, sf=$("serviceFilter").value;
+ const list=DATA.filter(o=>{
+  const hay=[o.order_no,o.customer_name,o.mobile,o.service,o.address,o.notes].join(" ").toLowerCase();
+  return (!q||hay.includes(q))&&(!st||o.order_status===st)&&(!sf||o.service===sf);
+ });
+ $("total").textContent=DATA.length;
+ $("received").textContent=DATA.filter(o=>o.order_status==="ORDER_RECEIVED").length;
+ $("processing").textContent=DATA.filter(o=>o.order_status==="PROCESSING").length;
+ $("completed").textContent=DATA.filter(o=>o.order_status==="COMPLETED").length;
+ $("cancelled").textContent=DATA.filter(o=>o.order_status==="CANCELLED").length;
+ $("rows").innerHTML=list.length?list.map(o=>{
+  const phone=wa(o.mobile);
+  return `<tr>
+   <td><b>${esc(o.order_no||"-")}</b></td>
+   <td>${esc(o.customer_name||"-")}</td>
+   <td>${esc(o.mobile||"-")}</td>
+   <td>${esc(o.service||o.card_type||"-")}</td>
+   <td>${esc(fmt(o.created_at))}</td>
+   <td><span class="status ${esc(o.order_status||"")}">${esc(o.order_status||"-")}</span></td>
+   <td><div class="actions">
+    <button class="dark mini" onclick="details(${Number(o.id)})">Details</button>
+    ${phone?`<a class="wa" target="_blank" href="https://wa.me/${phone}?text=${encodeURIComponent("Hello "+(o.customer_name||"")+", regarding your Puspa Enterprise request "+(o.order_no||""))}">WhatsApp</a>`:""}
+    <button class="primary mini" onclick="setStatus(${Number(o.id)},'PROCESSING')">Processing</button>
+    <button class="success mini" onclick="setStatus(${Number(o.id)},'COMPLETED')">Completed</button>
+    <button class="danger mini" onclick="removeOrder(${Number(o.id)})">Delete</button>
+   </div></td>
+  </tr>`;
+ }).join(""):'<tr><td colspan="7" class="empty">কোনো Request পাওয়া যায়নি</td></tr>';
+}
+function fillServices(){
+ const set=[...new Set(DATA.map(o=>o.service||o.card_type).filter(Boolean))].sort();
+ $("serviceFilter").innerHTML='<option value="">সব Service</option>'+set.map(s=>`<option>${esc(s)}</option>`).join("");
+}
+async function api(path,options={}){
+ const r=await fetch(path,{...options,headers:{...(options.headers||{}),Authorization:"Bearer "+TOKEN,"content-type":"application/json"}});
+ const text=await r.text(); let d={}; try{d=text?JSON.parse(text):{}}catch{throw new Error("Server returned invalid response ("+r.status+")")}
+ if(!r.ok)throw new Error(d.error||"Request failed");
+ return d;
+}
+async function load(){
+ try{const d=await api("/api/orders");DATA=d.orders||[];fillServices();render();msg("Dashboard updated.",true)}
+ catch(e){msg(e.message)}
+}
+window.details=id=>{
+ const o=DATA.find(x=>Number(x.id)===Number(id)); if(!o)return;
+ $("detailContent").innerHTML=`<div class="details">
+ <div class="detail"><small>Order No</small><b>${esc(o.order_no||"-")}</b></div>
+ <div class="detail"><small>Status</small><b>${esc(o.order_status||"-")}</b></div>
+ <div class="detail"><small>Customer Name</small>${esc(o.customer_name||"-")}</div>
+ <div class="detail"><small>Mobile</small>${esc(o.mobile||"-")}</div>
+ <div class="detail"><small>Email</small>${esc(o.email||"-")}</div>
+ <div class="detail"><small>Service</small>${esc(o.service||o.card_type||"-")}</div>
+ <div class="detail full"><small>Address</small>${esc(o.address||"-")}</div>
+ <div class="detail full"><small>Notes</small>${esc(o.notes||"-")}</div>
+ <div class="detail"><small>Payment Status</small>${esc(o.payment_status||"-")}</div>
+ <div class="detail"><small>Created</small>${esc(fmt(o.created_at))}</div>
+ </div>`;
+ $("modal").style.display="block";
+};
+window.closeModal=()=>{$("modal").style.display="none"};
+window.setStatus=async(id,status)=>{
+ if(!confirm("এই order-এর status "+status+" করতে চান?"))return;
+ try{await api("/api/orders/"+id,{method:"PATCH",body:JSON.stringify({order_status:status})});await load();msg("Status updated successfully.",true)}
+ catch(e){msg(e.message)}
+};
+window.removeOrder=async id=>{
+ if(!confirm("এই request DELETE করতে চান? এই কাজটি undo করা যাবে না."))return;
+ try{await api("/api/orders/"+id,{method:"DELETE"});await load();msg("Order deleted.",true)}
+ catch(e){msg(e.message)}
+};
+$("login").onclick=async()=>{
+ TOKEN=$("token").value.trim(); if(!TOKEN){$("loginMsg").innerHTML='<span class="err">Token দিন</span>';return}
+ try{const d=await api("/api/orders");DATA=d.orders||[];$("loginBox").style.display="none";$("app").style.display="block";$("logout").style.display="block";fillServices();render()}
+ catch(e){$("loginMsg").innerHTML='<span class="err">'+esc(e.message)+'</span>'}
+};
+$("refresh").onclick=load;$("search").oninput=render;$("filter").onchange=render;$("serviceFilter").onchange=render;
+$("logout").onclick=()=>{TOKEN="";DATA=[];$("app").style.display="none";$("loginBox").style.display="block";$("logout").style.display="none";$("token").value=""};
+$("token").addEventListener("keydown",e=>{if(e.key==="Enter")$("login").click()});
+$("modal").addEventListener("click",e=>{if(e.target===$("modal"))closeModal()});
+</script>
+</body>
+</html>
